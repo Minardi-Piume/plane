@@ -10,6 +10,8 @@ import RenderIfVisible from "@/components/core/render-if-visible-HOC";
 // hooks
 import { BlockRow } from "@/components/gantt-chart/blocks/block-row";
 import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
+// Minardi fork: corsie raggruppate
+import { isGroupHeaderId } from "@/components/gantt-chart/contexts/group-context";
 import type { TSelectionHelper } from "@/hooks/use-multiple-select";
 // types
 
@@ -36,9 +38,20 @@ export function GanttChartRowList(props: GanttChartBlocksProps) {
 
   return (
     <div className="absolute top-0 left-0 w-max min-w-full">
-      {blockIds?.map((blockId) => (
-        <>
+      {blockIds?.map((blockId) => {
+        // Minardi fork: riga di sfondo (spacer) per l'intestazione di gruppo, così le barre restano allineate
+        if (isGroupHeaderId(blockId)) {
+          return (
+            <div
+              key={blockId}
+              className="pointer-events-none relative w-max min-w-full bg-layer-1"
+              style={{ height: `${BLOCK_HEIGHT}px` }}
+            />
+          );
+        }
+        return (
           <RenderIfVisible
+            key={blockId}
             root={ganttContainerRef}
             horizontalOffset={100}
             verticalOffset={200}
@@ -57,8 +70,8 @@ export function GanttChartRowList(props: GanttChartBlocksProps) {
               ganttContainerRef={ganttContainerRef}
             />
           </RenderIfVisible>
-        </>
-      ))}
+        );
+      })}
     </div>
   );
 }

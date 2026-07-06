@@ -35,6 +35,8 @@ import { IssueBulkOperationsRoot } from "@/plane-web/components/issues/bulk-oper
 import { useBulkOperationStatus } from "@/plane-web/hooks/use-bulk-operation-status";
 //
 import { DEFAULT_BLOCK_WIDTH, GANTT_SELECT_GROUP, HEADER_HEIGHT } from "../constants";
+// Minardi fork: corsie raggruppate
+import { isGroupHeaderId } from "../contexts/group-context";
 import { getItemPositionWidth } from "../views";
 import { TimelineDragHelper } from "./timeline-drag-helper";
 
@@ -110,7 +112,7 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
         canScroll: ({ source }) => source.data.dragInstanceId === "GANTT_REORDER",
       })
     );
-  }, [ganttContainerRef?.current]);
+  }, []);
 
   // handling scroll functionality
   const onScroll = (e: React.UIEvent<HTMLDivElement, UIEvent>) => {
@@ -167,7 +169,8 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
       <MultipleSelectGroup
         containerRef={ganttContainerRef}
         entities={{
-          [GANTT_SELECT_GROUP]: blockIds ?? [],
+          // Minardi fork: escludi le sentinelle di intestazione dalla selezione multipla
+          [GANTT_SELECT_GROUP]: (blockIds ?? []).filter((id) => !isGroupHeaderId(id)),
         }}
         disabled={!isBulkOperationsEnabled || isEpic}
       >

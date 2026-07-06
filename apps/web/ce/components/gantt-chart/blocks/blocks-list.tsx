@@ -7,6 +7,9 @@
 //
 import type { IBlockUpdateDependencyData } from "@plane/types";
 import { GanttChartBlock } from "@/components/gantt-chart/blocks/block";
+import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
+// Minardi fork: corsie raggruppate
+import { isGroupHeaderId } from "@/components/gantt-chart/contexts/group-context";
 
 export type GanttChartBlocksProps = {
   blockIds: string[];
@@ -35,24 +38,30 @@ export function GanttChartBlocksList(props: GanttChartBlocksProps) {
 
   return (
     <>
-      {blockIds?.map((blockId) => (
-        <GanttChartBlock
-          key={blockId}
-          blockId={blockId}
-          showAllBlocks={showAllBlocks}
-          blockToRender={blockToRender}
-          enableBlockLeftResize={
-            typeof enableBlockLeftResize === "function" ? enableBlockLeftResize(blockId) : enableBlockLeftResize
-          }
-          enableBlockRightResize={
-            typeof enableBlockRightResize === "function" ? enableBlockRightResize(blockId) : enableBlockRightResize
-          }
-          enableBlockMove={typeof enableBlockMove === "function" ? enableBlockMove(blockId) : enableBlockMove}
-          enableDependency={typeof enableDependency === "function" ? enableDependency(blockId) : enableDependency}
-          ganttContainerRef={ganttContainerRef}
-          updateBlockDates={updateBlockDates}
-        />
-      ))}
+      {blockIds?.map((blockId) => {
+        // Minardi fork: spacer al posto della barra per l'intestazione di gruppo (allineamento)
+        if (isGroupHeaderId(blockId)) {
+          return <div key={blockId} className="pointer-events-none w-full" style={{ height: `${BLOCK_HEIGHT}px` }} />;
+        }
+        return (
+          <GanttChartBlock
+            key={blockId}
+            blockId={blockId}
+            showAllBlocks={showAllBlocks}
+            blockToRender={blockToRender}
+            enableBlockLeftResize={
+              typeof enableBlockLeftResize === "function" ? enableBlockLeftResize(blockId) : enableBlockLeftResize
+            }
+            enableBlockRightResize={
+              typeof enableBlockRightResize === "function" ? enableBlockRightResize(blockId) : enableBlockRightResize
+            }
+            enableBlockMove={typeof enableBlockMove === "function" ? enableBlockMove(blockId) : enableBlockMove}
+            enableDependency={typeof enableDependency === "function" ? enableDependency(blockId) : enableDependency}
+            ganttContainerRef={ganttContainerRef}
+            updateBlockDates={updateBlockDates}
+          />
+        );
+      })}
     </>
   );
 }
