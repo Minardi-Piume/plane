@@ -7,12 +7,17 @@
 import type { RefObject } from "react";
 import { useState } from "react";
 import { observer } from "mobx-react";
+import { ChevronRight } from "lucide-react";
 // ui
 import { GANTT_TIMELINE_TYPE } from "@plane/types";
 import type { IBlockUpdateData } from "@plane/types";
-import { Loader } from "@plane/ui";
+import { Loader, Row } from "@plane/ui";
+import { cn } from "@plane/utils";
 // components
 import RenderIfVisible from "@/components/core/render-if-visible-HOC";
+import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
+// Minardi fork: corsie raggruppate
+import { isGroupHeaderId, useGanttGroups } from "@/components/gantt-chart/contexts/group-context";
 import { GanttLayoutListItemLoader } from "@/components/ui/loader/layouts/gantt-layout-loader";
 //hooks
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
@@ -52,6 +57,8 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   } = props;
 
   const { getBlockById } = useTimeLineChart(GANTT_TIMELINE_TYPE.ISSUE);
+  // Minardi fork: intestazioni di gruppo (corsie)
+  const { headers: groupHeaders, toggleGroup } = useGanttGroups();
 
   const {
     issues: { getIssueLoader },
@@ -81,6 +88,27 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
       {blockIds ? (
         <>
           {blockIds.map((blockId, index) => {
+            // Minardi fork: riga-intestazione di sezione (corsia). PRIMA di getBlockById.
+            if (isGroupHeaderId(blockId)) {
+              const header = groupHeaders[blockId];
+              if (!header) return null;
+              return (
+                <Row
+                  key={blockId}
+                  className="group sticky left-0 z-[5] flex w-full cursor-pointer items-center gap-1.5 bg-layer-1 pr-4 font-medium hover:bg-layer-1-hover"
+                  style={{ height: `${BLOCK_HEIGHT}px` }}
+                  onClick={() => toggleGroup(header.group.id)}
+                >
+                  <ChevronRight
+                    className={cn("size-4 flex-shrink-0 text-secondary transition-transform", {
+                      "rotate-90": !header.isCollapsed,
+                    })}
+                  />
+                  <span className="truncate text-13">{header.group.name}</span>
+                  <span className="flex-shrink-0 text-11 text-secondary">{header.count}</span>
+                </Row>
+              );
+            }
             const block = getBlockById(blockId);
             const isBlockVisibleOnSidebar = block?.start_date && block?.target_date;
 
