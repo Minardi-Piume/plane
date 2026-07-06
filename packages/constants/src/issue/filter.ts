@@ -268,6 +268,8 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         display_properties: ["key", "issue_type"],
         display_filters: {
           order_by: ["sort_order", "-created_at", "-updated_at", "start_date", "-priority"],
+          // Minardi fork: raggruppamento a corsie sulla timeline (es. per label "sez:" = sezioni Asana)
+          group_by: ["state", "labels", "priority", "assignees", null],
           type: ["active", "backlog"],
         },
         extra_options: {
@@ -353,9 +355,9 @@ export const filterActivityOnSelectedFilters = (
   activity: TIssueActivityComment[],
   filters: TActivityFilters[]
 ): TIssueActivityComment[] =>
-  activity.filter((activity) => {
-    if (activity.activity_type === EActivityFilterType.DEFAULT) return true;
-    return filters.includes(activity.activity_type as TActivityFilters);
+  activity.filter((item) => {
+    if (item.activity_type === EActivityFilterType.DEFAULT) return true;
+    return filters.includes(item.activity_type as TActivityFilters);
   });
 
 export const ENABLE_ISSUE_DEPENDENCIES = false;
