@@ -73,26 +73,29 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 1);
 
-  // Minardi fork: quando la timeline è raggruppata serve TUTTO il dataset (il grouping è
-  // client-side). Carichiamo una pagina grande in UNA SOLA richiesta (niente loop di
-  // fetchNextIssues): impossibile mandare in freeze il browser. Se l'API limita la page
-  // size si caricano comunque molte sezioni, mai un blocco.
-  const wantMoreForGrouping =
-    appliedDisplayFilters?.group_by === "state" || appliedDisplayFilters?.group_by === "labels";
-
-  // 500 = compromesso: carica in fretta e copre molte sezioni; il resto arriva con lo scroll.
-  // NB: mostrare TUTTE le sezioni di colpo su 7.640 task richiederebbe il grouping lato server
-  // (fetch canGroup:true paginato per gruppo) — enhancement più grosso, non fatto qui.
   useEffect(() => {
-    fetchIssues("init-loader", { canGroup: false, perPageCount: wantMoreForGrouping ? 500 : 100 }, viewId);
-  }, [fetchIssues, storeType, viewId, wantMoreForGrouping]);
+    fetchIssues("init-loader", { canGroup: false, perPageCount: 100 }, viewId);
+  }, [fetchIssues, storeType, viewId]);
 
   useEffect(() => {
     initGantt();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const issuesIds = useMemo(() => (issues.groupedIssueIds?.[ALL_ISSUES] as string[]) ?? [], [issues.groupedIssueIds]);
+  // Minardi fork: lista piatta degli id issue. Normalmente sta in ALL_ISSUES; ma se un
+  // group_by nei filtri fa ripartire le issue nei bucket (ALL_ISSUES vuoto), appiattiamo
+  // e deduplichiamo tutti i bucket per riottenere la lista piatta (il grouping a corsie è client-side).
+  const issuesIds = useMemo(() => {
+    const grouped = (issues.groupedIssueIds || {}) as Record<string, string[]>;
+    const all = grouped[ALL_ISSUES];
+    if (all && all.length > 0) return all;
+    const flat = new Set<string>();
+    for (const [key, ids] of Object.entries(grouped)) {
+      if (key === ALL_ISSUES || !Array.isArray(ids)) continue;
+      for (const id of ids) flat.add(id);
+    }
+    return Array.from(flat);
+  }, [issues.groupedIssueIds]);
   const nextPageResults = issues.getPaginationData(undefined, undefined)?.nextPageResults;
 
   // ─── Minardi fork: corsie raggruppate sulla timeline ────────────────────────
