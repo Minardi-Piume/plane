@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { observer } from "mobx-react";
@@ -96,14 +96,59 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   } = props;
   // refs
   const ganttContainerRef = useRef<HTMLDivElement>(null);
+  // Minardi fork: ref al contenuto chart (x=0 delle position dei blocchi) per misurare
+  // in pixel chart-local la porzione visibile
+  const chartContentRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
   // chart hook
   const { currentView, currentViewData, getBlockById } = useTimeLineChartStore();
   // Minardi fork: modalità corsie impacchettate (stile Asana)
   const { packed, sections } = useGanttGroups();
+
+  // Minardi fork: finestra VISIBILE in pixel chart-local (per packing viewport-tight).
+  // Misurata da getBoundingClientRect di container e contenuto chart, con margine
+  // (mezzo schermo per lato) per evitare sfarfallio dell'altezza ai bordi durante lo scroll.
+  const [packWindow, setPackWindow] = useState<{ start: number; end: number } | null>(null);
+  const recomputePackWindow = useCallback(() => {
+    const container = ganttContainerRef.current;
+    const chart = chartContentRef.current;
+    if (!container || !chart) return;
+    const c = container.getBoundingClientRect();
+    const ch = chart.getBoundingClientRect();
+    const buffer = c.width * 0.5;
+    const start = c.left - ch.left - buffer;
+    const end = c.right - ch.left + buffer;
+    // aggiorna solo su spostamenti significativi (>8px) per limitare i render
+    setPackWindow((prev) =>
+      prev && Math.abs(prev.start - start) < 8 && Math.abs(prev.end - end) < 8 ? prev : { start, end }
+    );
+  }, []);
+  const scheduleRecomputePackWindow = useCallback(() => {
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      recomputePackWindow();
+    });
+  }, [recomputePackWindow]);
+  // ricalcola la finestra a montaggio / cambio zoom (currentView) / larghezza chart.
+  // Misura diretta (non rAF) per evitare un frame con bande alte; il rAF serve solo
+  // per lo scroll ad alta frequenza.
+  useEffect(() => {
+    if (!packed) return;
+    recomputePackWindow();
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [packed, currentView, itemsContainerWidth, recomputePackWindow]);
+
   // Minardi fork: packing "per finestra visibile". Calcolato nel render (questo è un
   // observer): computePackedLayout legge le position via getBlockById, quindi MobX
   // traccia i cambi di posizione (zoom/scroll/caricamento) e ricalcola le bande.
-  const packedLayout = packed ? computePackedLayout(sections, getBlockById, itemsContainerWidth) : EMPTY_PACKED_LAYOUT;
+  const win = packWindow ?? { start: 0, end: itemsContainerWidth };
+  const packedLayout = packed ? computePackedLayout(sections, getBlockById, win.start, win.end) : EMPTY_PACKED_LAYOUT;
   // plane web hooks
   const isBulkOperationsEnabled = useBulkOperationStatus();
 
@@ -136,6 +181,8 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
     if (approxRangeLeft < clientWidth) {
       updateCurrentViewRenderPayload("left", currentView);
     }
+    // Minardi fork: aggiorna la finestra visibile per il packing viewport-tight
+    if (packed) scheduleRecomputePackWindow();
   };
 
   const handleScrollToBlock = (block: IGanttBlock) => {
@@ -214,6 +261,7 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
                 <ActiveChartView />
                 {currentViewData && (
                   <div
+                    ref={chartContentRef}
                     className="relative h-full"
                     style={{
                       width: `${itemsContainerWidth}px`,

@@ -23,12 +23,15 @@ const MIN_GAP_PX = 4;
 
 /**
  * Impacchetta le barre di ogni sezione sulle sotto-righe (interval partitioning sui
- * pixel), includendo solo quelle che intersecano la finestra renderizzata.
+ * pixel), includendo solo quelle che intersecano la finestra `[windowStart, windowEnd]`
+ * (in pixel, coordinate chart-local). Passando la porzione VISIBILE si ottengono bande
+ * strette come il viewport; passando `[0, itemsContainerWidth]` l'intera finestra renderizzata.
  */
 export const computePackedLayout = (
   sections: { id: string; blockIds: string[] }[],
   getBlockById: (blockId: string) => IGanttBlock | undefined,
-  itemsContainerWidth: number
+  windowStart: number,
+  windowEnd: number
 ): TPackedLayout => {
   const layout: TPackedLayout = {};
   for (const section of sections) {
@@ -38,8 +41,8 @@ export const computePackedLayout = (
       if (!pos) continue;
       const left = pos.marginLeft;
       const right = pos.marginLeft + pos.width;
-      // scarta le barre completamente fuori dalla finestra renderizzata
-      if (right < 0 || left > itemsContainerWidth) continue;
+      // scarta le barre completamente fuori dalla finestra considerata
+      if (right < windowStart || left > windowEnd) continue;
       spans.push({ id, left, right });
     }
     spans.sort((a, b) => a.left - b.left);
