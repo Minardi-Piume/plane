@@ -77,12 +77,15 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
   // client-side). Carichiamo una pagina grande in UNA SOLA richiesta (niente loop di
   // fetchNextIssues): impossibile mandare in freeze il browser. Se l'API limita la page
   // size si caricano comunque molte sezioni, mai un blocco.
-  const wantAllForGrouping =
+  const wantMoreForGrouping =
     appliedDisplayFilters?.group_by === "state" || appliedDisplayFilters?.group_by === "labels";
 
+  // 500 = compromesso: carica in fretta e copre molte sezioni; il resto arriva con lo scroll.
+  // NB: mostrare TUTTE le sezioni di colpo su 7.640 task richiederebbe il grouping lato server
+  // (fetch canGroup:true paginato per gruppo) — enhancement più grosso, non fatto qui.
   useEffect(() => {
-    fetchIssues("init-loader", { canGroup: false, perPageCount: wantAllForGrouping ? 10000 : 100 }, viewId);
-  }, [fetchIssues, storeType, viewId, wantAllForGrouping]);
+    fetchIssues("init-loader", { canGroup: false, perPageCount: wantMoreForGrouping ? 500 : 100 }, viewId);
+  }, [fetchIssues, storeType, viewId, wantMoreForGrouping]);
 
   useEffect(() => {
     initGantt();
