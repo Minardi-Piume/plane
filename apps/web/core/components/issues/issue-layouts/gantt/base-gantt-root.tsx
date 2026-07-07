@@ -162,6 +162,15 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
     () => ({ enabled: groupingEnabled, headers: groupHeaders, toggleGroup }),
     [groupingEnabled, groupHeaders, toggleGroup]
   );
+
+  // Quando la vista è raggruppata, carica TUTTE le pagine (il grouping è client-side,
+  // altrimenti si vedrebbero solo le sezioni della prima pagina). Progressivo: a ogni
+  // pagina caricata issuesIds.length cambia e l'effetto ricarica la successiva, fino a fine.
+  useEffect(() => {
+    const grouping = groupBy === "state" || groupBy === "labels";
+    if (grouping && nextPageResults) fetchNextIssues();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupBy, nextPageResults, issuesIds.length]);
   // ─────────────────────────────────────────────────────────────────────────
 
   const { enableIssueCreation } = issues?.viewFlags || {};
