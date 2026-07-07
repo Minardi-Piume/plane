@@ -17,11 +17,7 @@ import { renderFormattedPayloadDate } from "@plane/utils";
 // components
 import { TimeLineTypeContext } from "@/components/gantt-chart/contexts";
 // Minardi fork: contesto per le corsie raggruppate sulla timeline
-import {
-  GanttGroupContext,
-  makeGroupHeaderId,
-  type TGanttGroupHeader,
-} from "@/components/gantt-chart/contexts/group-context";
+import { GanttGroupContext, type TPackedSection } from "@/components/gantt-chart/contexts/group-context";
 import { GanttChartRoot } from "@/components/gantt-chart/root";
 import { IssueGanttSidebar } from "@/components/gantt-chart/sidebar/issues/sidebar";
 // hooks
@@ -119,10 +115,9 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
     });
   }, []);
 
-  const { blockIds, groupHeaders, groupingEnabled } = useMemo(() => {
+  const { packedSections, groupingEnabled } = useMemo(() => {
     const supported = groupBy === "state" || groupBy === "labels";
-    if (!supported)
-      return { blockIds: issuesIds, groupHeaders: {} as Record<string, TGanttGroupHeader>, groupingEnabled: false };
+    if (!supported) return { packedSections: [] as TPackedSection[], groupingEnabled: false };
 
     // chiave + nome del gruppo per una issue (single-membership per corsie pulite)
     const groupOf = (issueId: string): { key: string; name: string } => {
@@ -132,7 +127,6 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
         const st = issue.state_id ? getStateById(issue.state_id) : undefined;
         return { key: issue.state_id ?? "__none__", name: st?.name ?? "Senza stato" };
       }
-      // labels: preferisci la label "sez:" (sezione Asana), altrimenti la prima
       const labelIds = issue.label_ids ?? [];
       let chosen = labelIds.map((id) => getLabelById(id)).find((l) => l?.name?.startsWith("sez:"));
       if (!chosen && labelIds.length > 0) chosen = getLabelById(labelIds[0]) ?? undefined;
@@ -140,7 +134,6 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
       return { key: chosen?.id ?? "__none__", name };
     };
 
-    // raggruppa preservando l'ordine di prima comparsa
     const order: string[] = [];
     const byGroup: Record<string, { name: string; ids: string[] }> = {};
     for (const id of issuesIds) {
@@ -151,29 +144,55 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
       }
       byGroup[key].ids.push(id);
     }
-    if (order.length <= 1)
-      return { blockIds: issuesIds, groupHeaders: {} as Record<string, TGanttGroupHeader>, groupingEnabled: false };
+    if (order.length <= 1) return { packedSections: [] as TPackedSection[], groupingEnabled: false };
 
-    const allIds: string[] = [];
-    const headers: Record<string, TGanttGroupHeader> = {};
-    for (const key of order) {
+    // Packing per sezione: interval partitioning sulle date (start/target).
+    const sections: TPackedSection[] = order.map((key) => {
       const g = byGroup[key];
-      const headerId = makeGroupHeaderId(key);
-      const isCollapsed = collapsedGroups.has(key);
-      headers[headerId] = {
-        group: { id: key, name: g.name, count: g.ids.length },
+      const withDates: { id: string; start: string; end: string }[] = [];
+      let noDateCount = 0;
+      for (const id of g.ids) {
+        const iss = getIssueById(id);
+        if (iss && (iss.start_date || iss.target_date)) {
+          const s = (iss.start_date ?? iss.target_date) as string;
+          const e = (iss.target_date ?? iss.start_date) as string;
+          withDates.push({ id, start: s, end: e });
+        } else noDateCount++;
+      }
+      withDates.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+      const rowEnds: string[] = []; // ultima end per sotto-riga
+      const subRowByBlockId: Record<string, number> = {};
+      for (const w of withDates) {
+        let placed = rowEnds.findIndex((end) => end < w.start);
+        if (placed === -1) {
+          placed = rowEnds.length;
+          rowEnds.push(w.end);
+        } else rowEnds[placed] = w.end;
+        subRowByBlockId[w.id] = placed;
+      }
+      return {
+        id: key,
+        name: g.name,
         count: g.ids.length,
-        isCollapsed,
+        isCollapsed: collapsedGroups.has(key),
+        rowCount: Math.max(1, rowEnds.length),
+        blockIds: withDates.map((w) => w.id),
+        subRowByBlockId,
+        noDateCount,
       };
-      allIds.push(headerId);
-      if (!isCollapsed) allIds.push(...g.ids);
-    }
-    return { blockIds: allIds, groupHeaders: headers, groupingEnabled: true };
+    });
+    return { packedSections: sections, groupingEnabled: true };
   }, [issuesIds, groupBy, collapsedGroups, getIssueById, getLabelById, getStateById]);
 
   const groupContextValue = useMemo(
-    () => ({ enabled: groupingEnabled, headers: groupHeaders, toggleGroup }),
-    [groupingEnabled, groupHeaders, toggleGroup]
+    () => ({
+      enabled: groupingEnabled,
+      packed: groupingEnabled,
+      sections: packedSections,
+      headers: {},
+      toggleGroup,
+    }),
+    [groupingEnabled, packedSections, toggleGroup]
   );
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -235,7 +254,7 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
               border={false}
               title={isEpic ? t("epic.label", { count: 2 }) : t("issue.label", { count: 2 })}
               loaderTitle={isEpic ? t("epic.label", { count: 2 }) : t("issue.label", { count: 2 })}
-              blockIds={blockIds}
+              blockIds={issuesIds}
               blockUpdateHandler={updateIssueBlockStructure}
               blockToRender={(data: TIssue) => <IssueGanttBlock issueId={data.id} isEpic={isEpic} />}
               sidebarToRender={(sidebarProps) => <IssueGanttSidebar {...sidebarProps} showAllBlocks isEpic={isEpic} />}

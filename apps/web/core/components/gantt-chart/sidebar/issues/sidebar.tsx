@@ -57,8 +57,8 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   } = props;
 
   const { getBlockById } = useTimeLineChart(GANTT_TIMELINE_TYPE.ISSUE);
-  // Minardi fork: intestazioni di gruppo (corsie)
-  const { headers: groupHeaders, toggleGroup } = useGanttGroups();
+  // Minardi fork: corsie (packed = stile Asana; sennò intestazioni legacy)
+  const { packed, sections, headers: groupHeaders, toggleGroup } = useGanttGroups();
 
   const {
     issues: { getIssueLoader },
@@ -82,6 +82,32 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   ) => {
     handleOrderChange(draggingBlockId, droppedBlockId, dropAtEndOfList, blockIds, getBlockById, blockUpdateHandler);
   };
+
+  // Minardi fork: sidebar "a corsie impacchettate" — solo intestazioni-sezione,
+  // altezza = banda (rowCount * BLOCK_HEIGHT), header in alto. Allineata alle bande del grafico.
+  if (packed) {
+    return (
+      <div>
+        {sections.map((section) => (
+          <div key={section.id} style={{ height: `${(section.isCollapsed ? 1 : section.rowCount) * BLOCK_HEIGHT}px` }}>
+            <Row
+              className="group sticky left-0 z-[5] flex w-full cursor-pointer items-center gap-1.5 bg-layer-1 pr-4 font-medium hover:bg-layer-1-hover"
+              style={{ height: `${BLOCK_HEIGHT}px` }}
+              onClick={() => toggleGroup(section.id)}
+            >
+              <ChevronRight
+                className={cn("size-4 flex-shrink-0 text-secondary transition-transform", {
+                  "rotate-90": !section.isCollapsed,
+                })}
+              />
+              <span className="truncate text-13">{section.name}</span>
+              <span className="flex-shrink-0 text-11 text-secondary">{section.count}</span>
+            </Row>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>

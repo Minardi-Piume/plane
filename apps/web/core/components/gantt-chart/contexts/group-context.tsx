@@ -19,14 +19,31 @@ export type TGanttGroupHeader = {
   isCollapsed: boolean;
 };
 
+// Minardi fork: modello "corsie impacchettate" (Asana). Ogni sezione è una banda;
+// i task sono impacchettati su sotto-righe (subRow) per data (interval partitioning).
+export type TPackedSection = {
+  id: string;
+  name: string;
+  count: number;
+  isCollapsed: boolean;
+  rowCount: number; // n. sotto-righe (min 1) → altezza banda = rowCount * BLOCK_HEIGHT
+  blockIds: string[]; // task della sezione con date valide, in ordine
+  subRowByBlockId: Record<string, number>; // blockId -> indice sotto-riga (0-based)
+  noDateCount: number; // task della sezione senza date (non mostrati come barre)
+};
+
 export type TGanttGroupContext = {
   enabled: boolean;
-  headers: Record<string, TGanttGroupHeader>; // chiave = id sentinella
+  packed: boolean; // true = rendering a corsie impacchettate (stile Asana)
+  sections: TPackedSection[];
+  headers: Record<string, TGanttGroupHeader>; // legacy (percorso sentinella, non usato in packed)
   toggleGroup: (groupId: string) => void;
 };
 
 export const GanttGroupContext = createContext<TGanttGroupContext>({
   enabled: false,
+  packed: false,
+  sections: [],
   headers: {},
   toggleGroup: () => {},
 });

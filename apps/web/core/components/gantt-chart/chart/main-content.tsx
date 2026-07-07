@@ -35,9 +35,10 @@ import { IssueBulkOperationsRoot } from "@/plane-web/components/issues/bulk-oper
 import { useBulkOperationStatus } from "@/plane-web/hooks/use-bulk-operation-status";
 //
 import { DEFAULT_BLOCK_WIDTH, GANTT_SELECT_GROUP, HEADER_HEIGHT } from "../constants";
-// Minardi fork: corsie raggruppate
-import { isGroupHeaderId } from "../contexts/group-context";
+// Minardi fork: corsie raggruppate / impacchettate
+import { isGroupHeaderId, useGanttGroups } from "../contexts/group-context";
 import { getItemPositionWidth } from "../views";
+import { GanttPackedBands } from "./packed-bands";
 import { TimelineDragHelper } from "./timeline-drag-helper";
 
 type Props = {
@@ -96,6 +97,8 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   const ganttContainerRef = useRef<HTMLDivElement>(null);
   // chart hook
   const { currentView, currentViewData } = useTimeLineChartStore();
+  // Minardi fork: modalità corsie impacchettate (stile Asana)
+  const { packed } = useGanttGroups();
   // plane web hooks
   const isBulkOperationsEnabled = useBulkOperationStatus();
 
@@ -213,29 +216,35 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
                       paddingBottom: `${HEADER_HEIGHT}px`,
                     }}
                   >
-                    <GanttChartRowList
-                      blockIds={blockIds}
-                      blockUpdateHandler={blockUpdateHandler}
-                      handleScrollToBlock={handleScrollToBlock}
-                      enableAddBlock={enableAddBlock}
-                      showAllBlocks={showAllBlocks}
-                      selectionHelpers={helpers}
-                      ganttContainerRef={ganttContainerRef}
-                    />
-                    <TimelineDependencyPaths isEpic={isEpic} />
-                    <TimelineDraggablePath />
-                    <GanttAdditionalLayers itemsContainerWidth={itemsContainerWidth} blockCount={blockIds.length} />
-                    <GanttChartBlocksList
-                      blockIds={blockIds}
-                      blockToRender={blockToRender}
-                      enableBlockLeftResize={enableBlockLeftResize}
-                      enableBlockRightResize={enableBlockRightResize}
-                      enableBlockMove={enableBlockMove}
-                      ganttContainerRef={ganttContainerRef}
-                      enableDependency={enableDependency}
-                      showAllBlocks={showAllBlocks}
-                      updateBlockDates={updateBlockDates}
-                    />
+                    {packed ? (
+                      <GanttPackedBands blockToRender={blockToRender} itemsContainerWidth={itemsContainerWidth} />
+                    ) : (
+                      <>
+                        <GanttChartRowList
+                          blockIds={blockIds}
+                          blockUpdateHandler={blockUpdateHandler}
+                          handleScrollToBlock={handleScrollToBlock}
+                          enableAddBlock={enableAddBlock}
+                          showAllBlocks={showAllBlocks}
+                          selectionHelpers={helpers}
+                          ganttContainerRef={ganttContainerRef}
+                        />
+                        <TimelineDependencyPaths isEpic={isEpic} />
+                        <TimelineDraggablePath />
+                        <GanttAdditionalLayers itemsContainerWidth={itemsContainerWidth} blockCount={blockIds.length} />
+                        <GanttChartBlocksList
+                          blockIds={blockIds}
+                          blockToRender={blockToRender}
+                          enableBlockLeftResize={enableBlockLeftResize}
+                          enableBlockRightResize={enableBlockRightResize}
+                          enableBlockMove={enableBlockMove}
+                          ganttContainerRef={ganttContainerRef}
+                          enableDependency={enableDependency}
+                          showAllBlocks={showAllBlocks}
+                          updateBlockDates={updateBlockDates}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
               </div>
