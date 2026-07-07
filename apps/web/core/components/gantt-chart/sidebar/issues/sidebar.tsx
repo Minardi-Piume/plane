@@ -17,6 +17,7 @@ import { cn } from "@plane/utils";
 import RenderIfVisible from "@/components/core/render-if-visible-HOC";
 import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
 // Minardi fork: corsie raggruppate
+import { usePackedLayout } from "@/components/gantt-chart/chart/packed-layout";
 import { isGroupHeaderId, useGanttGroups } from "@/components/gantt-chart/contexts/group-context";
 import { GanttLayoutListItemLoader } from "@/components/ui/loader/layouts/gantt-layout-loader";
 //hooks
@@ -59,6 +60,8 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   const { getBlockById } = useTimeLineChart(GANTT_TIMELINE_TYPE.ISSUE);
   // Minardi fork: corsie (packed = stile Asana; sennò intestazioni legacy)
   const { packed, sections, headers: groupHeaders, toggleGroup } = useGanttGroups();
+  // Minardi fork: altezza banda dal layout per-finestra (allineata al grafico)
+  const packedLayout = usePackedLayout();
 
   const {
     issues: { getIssueLoader },
@@ -89,7 +92,12 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
     return (
       <div>
         {sections.map((section) => (
-          <div key={section.id} style={{ height: `${(section.isCollapsed ? 1 : section.rowCount) * BLOCK_HEIGHT}px` }}>
+          <div
+            key={section.id}
+            style={{
+              height: `${(section.isCollapsed ? 1 : (packedLayout[section.id]?.rowCount ?? section.rowCount)) * BLOCK_HEIGHT}px`,
+            }}
+          >
             <Row
               className="group sticky left-0 z-[5] flex w-full cursor-pointer items-center gap-1.5 bg-layer-1 pr-4 font-medium hover:bg-layer-1-hover"
               style={{ height: `${BLOCK_HEIGHT}px` }}

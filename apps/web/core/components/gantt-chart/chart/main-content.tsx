@@ -38,6 +38,7 @@ import { DEFAULT_BLOCK_WIDTH, GANTT_SELECT_GROUP, HEADER_HEIGHT } from "../const
 // Minardi fork: corsie raggruppate / impacchettate
 import { isGroupHeaderId, useGanttGroups } from "../contexts/group-context";
 import { getItemPositionWidth } from "../views";
+import { computePackedLayout, EMPTY_PACKED_LAYOUT, PackedLayoutContext } from "./packed-layout";
 import { GanttPackedBands } from "./packed-bands";
 import { TimelineDragHelper } from "./timeline-drag-helper";
 
@@ -96,9 +97,13 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   // refs
   const ganttContainerRef = useRef<HTMLDivElement>(null);
   // chart hook
-  const { currentView, currentViewData } = useTimeLineChartStore();
+  const { currentView, currentViewData, getBlockById } = useTimeLineChartStore();
   // Minardi fork: modalità corsie impacchettate (stile Asana)
-  const { packed } = useGanttGroups();
+  const { packed, sections } = useGanttGroups();
+  // Minardi fork: packing "per finestra visibile". Calcolato nel render (questo è un
+  // observer): computePackedLayout legge le position via getBlockById, quindi MobX
+  // traccia i cambi di posizione (zoom/scroll/caricamento) e ricalcola le bande.
+  const packedLayout = packed ? computePackedLayout(sections, getBlockById, itemsContainerWidth) : EMPTY_PACKED_LAYOUT;
   // plane web hooks
   const isBulkOperationsEnabled = useBulkOperationStatus();
 
@@ -167,7 +172,7 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   const ActiveChartView = CHART_VIEW_COMPONENTS[currentView];
 
   return (
-    <>
+    <PackedLayoutContext.Provider value={packedLayout}>
       <TimelineDragHelper ganttContainerRef={ganttContainerRef} />
       <MultipleSelectGroup
         containerRef={ganttContainerRef}
@@ -254,6 +259,6 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
           </>
         )}
       </MultipleSelectGroup>
-    </>
+    </PackedLayoutContext.Provider>
   );
 });
