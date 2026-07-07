@@ -73,9 +73,16 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 1);
 
+  // Minardi fork: quando la timeline è raggruppata serve TUTTO il dataset (il grouping è
+  // client-side). Carichiamo una pagina grande in UNA SOLA richiesta (niente loop di
+  // fetchNextIssues): impossibile mandare in freeze il browser. Se l'API limita la page
+  // size si caricano comunque molte sezioni, mai un blocco.
+  const wantAllForGrouping =
+    appliedDisplayFilters?.group_by === "state" || appliedDisplayFilters?.group_by === "labels";
+
   useEffect(() => {
-    fetchIssues("init-loader", { canGroup: false, perPageCount: 100 }, viewId);
-  }, [fetchIssues, storeType, viewId]);
+    fetchIssues("init-loader", { canGroup: false, perPageCount: wantAllForGrouping ? 10000 : 100 }, viewId);
+  }, [fetchIssues, storeType, viewId, wantAllForGrouping]);
 
   useEffect(() => {
     initGantt();
