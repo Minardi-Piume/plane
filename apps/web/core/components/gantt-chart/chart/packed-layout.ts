@@ -14,6 +14,7 @@ import type { IGanttBlock } from "@plane/types";
 export type TPackedRow = {
   rowCount: number; // n. sotto-righe necessarie nella finestra visibile (min 1)
   subRowByBlockId: Record<string, number>; // blockId -> indice sotto-riga (solo barre in finestra)
+  visibleIds: string[]; // id delle sole barre in finestra, ordinati per posizione (per il rendering)
 };
 
 export type TPackedLayout = Record<string, TPackedRow>; // sectionId -> layout
@@ -58,7 +59,11 @@ export const computePackedLayout = (
       }
       subRowByBlockId[s.id] = placed;
     }
-    layout[section.id] = { rowCount: Math.max(1, rowEnds.length), subRowByBlockId };
+    layout[section.id] = {
+      rowCount: Math.max(1, rowEnds.length),
+      subRowByBlockId,
+      visibleIds: spans.map((s) => s.id),
+    };
   }
   return layout;
 };

@@ -28,6 +28,8 @@ export const GanttPackedBands = observer(function GanttPackedBands(props: Props)
         const rows = packedLayout[section.id];
         const rowCount = rows?.rowCount ?? section.rowCount;
         const subRowOf = rows?.subRowByBlockId ?? section.subRowByBlockId;
+        // virtualizzazione: renderizza solo le barre in vista (visibleIds), non tutti i blockIds
+        const idsToRender = rows?.visibleIds ?? section.blockIds;
         return (
           <div
             key={section.id}
@@ -38,11 +40,9 @@ export const GanttPackedBands = observer(function GanttPackedBands(props: Props)
             }}
           >
             {!section.isCollapsed &&
-              section.blockIds.map((blockId) => {
+              idsToRender.map((blockId) => {
                 const block = getBlockById(blockId);
                 if (!block?.position) return null;
-                // in modalità per-finestra rende solo le barre incluse nel packing (in vista)
-                if (rows && !(blockId in subRowOf)) return null;
                 const subRow = subRowOf[blockId] ?? 0;
                 return (
                   <div
