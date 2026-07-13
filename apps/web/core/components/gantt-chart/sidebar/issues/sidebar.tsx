@@ -17,7 +17,7 @@ import { cn } from "@plane/utils";
 import RenderIfVisible from "@/components/core/render-if-visible-HOC";
 import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
 // Minardi fork: corsie raggruppate
-import { usePackedLayout } from "@/components/gantt-chart/chart/packed-layout";
+import { PACKED_HEADER_HEIGHT, usePackedLayout } from "@/components/gantt-chart/chart/packed-layout";
 import { isGroupHeaderId, useGanttGroups } from "@/components/gantt-chart/contexts/group-context";
 import { GanttLayoutListItemLoader } from "@/components/ui/loader/layouts/gantt-layout-loader";
 //hooks
@@ -91,28 +91,27 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   if (packed) {
     return (
       <div>
-        {sections.map((section) => (
-          <div
-            key={section.id}
-            style={{
-              height: `${(section.isCollapsed ? 1 : (packedLayout[section.id]?.rowCount ?? section.rowCount)) * BLOCK_HEIGHT}px`,
-            }}
-          >
-            <Row
-              className="group sticky left-0 z-[5] flex w-full cursor-pointer items-center gap-1.5 bg-layer-1 pr-4 font-medium hover:bg-layer-1-hover"
-              style={{ height: `${BLOCK_HEIGHT}px` }}
-              onClick={() => toggleGroup(section.id)}
-            >
-              <ChevronRight
-                className={cn("size-4 flex-shrink-0 text-secondary transition-transform", {
-                  "rotate-90": !section.isCollapsed,
-                })}
-              />
-              <span className="truncate text-13">{section.name}</span>
-              <span className="flex-shrink-0 text-11 text-secondary">{section.count}</span>
-            </Row>
-          </div>
-        ))}
+        {sections.map((section) => {
+          const rowCount = packedLayout[section.id]?.rowCount ?? section.rowCount;
+          const bandHeight = PACKED_HEADER_HEIGHT + (section.isCollapsed ? 0 : rowCount * BLOCK_HEIGHT);
+          return (
+            <div key={section.id} style={{ height: `${bandHeight}px` }}>
+              <Row
+                className="group sticky left-0 z-[5] flex w-full cursor-pointer items-center gap-1.5 bg-layer-1 pr-4 font-medium hover:bg-layer-1-hover"
+                style={{ height: `${PACKED_HEADER_HEIGHT}px` }}
+                onClick={() => toggleGroup(section.id)}
+              >
+                <ChevronRight
+                  className={cn("size-4 flex-shrink-0 text-secondary transition-transform", {
+                    "rotate-90": !section.isCollapsed,
+                  })}
+                />
+                <span className="truncate text-13">{section.name}</span>
+                <span className="flex-shrink-0 text-11 text-secondary">{section.count}</span>
+              </Row>
+            </div>
+          );
+        })}
       </div>
     );
   }

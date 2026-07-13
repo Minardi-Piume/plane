@@ -10,7 +10,7 @@ import type { IBlockUpdateDependencyData } from "@plane/types";
 import { BLOCK_HEIGHT } from "../constants";
 import { useGanttGroups } from "../contexts/group-context";
 import { PackedGanttBar } from "./packed-bar";
-import { usePackedLayout } from "./packed-layout";
+import { PACKED_HEADER_HEIGHT, usePackedLayout } from "./packed-layout";
 
 type EnableFlag = boolean | ((blockId: string) => boolean);
 const resolveFlag = (flag: EnableFlag, blockId: string): boolean => (typeof flag === "function" ? flag(blockId) : flag);
@@ -48,15 +48,18 @@ export const GanttPackedBands = observer(function GanttPackedBands(props: Props)
         const subRowOf = rows?.subRowByBlockId ?? section.subRowByBlockId;
         // virtualizzazione: renderizza solo le barre in vista (visibleIds), non tutti i blockIds
         const idsToRender = rows?.visibleIds ?? section.blockIds;
+        const bandHeight = PACKED_HEADER_HEIGHT + (section.isCollapsed ? 0 : rowCount * BLOCK_HEIGHT);
         return (
           <div
             key={section.id}
             className="relative border-b-[0.5px] border-subtle"
             style={{
               width: `${itemsContainerWidth}px`,
-              height: `${(section.isCollapsed ? 1 : rowCount) * BLOCK_HEIGHT}px`,
+              height: `${bandHeight}px`,
             }}
           >
+            {/* riga-intestazione (stile Asana): lato grafico vuota, sfondo sottile */}
+            <div className="absolute top-0 left-0 w-full bg-layer-1" style={{ height: `${PACKED_HEADER_HEIGHT}px` }} />
             {!section.isCollapsed &&
               idsToRender.map((blockId) => (
                 <PackedGanttBar

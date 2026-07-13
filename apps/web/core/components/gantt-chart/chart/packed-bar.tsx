@@ -20,6 +20,7 @@ import { useTimeLineChartStore } from "@/hooks/use-timeline-chart";
 import { BLOCK_HEIGHT } from "../constants";
 import { ChartDraggable } from "../helpers";
 import { useGanttResizable } from "../helpers/blockResizables/use-gantt-resizable";
+import { PACKED_HEADER_HEIGHT } from "./packed-layout";
 
 type Props = {
   blockId: string;
@@ -61,7 +62,7 @@ export const PackedGanttBar = observer(function PackedGanttBar(props: Props) {
       id={`gantt-packed-block-${block.id}`}
       ref={resizableRef}
       style={{
-        top: `${subRow * BLOCK_HEIGHT}px`,
+        top: `${PACKED_HEADER_HEIGHT + subRow * BLOCK_HEIGHT}px`,
         left: 0,
         height: `${BLOCK_HEIGHT}px`,
         marginLeft: `${block.position.marginLeft}px`,

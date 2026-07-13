@@ -22,6 +22,10 @@ export type TPackedLayout = Record<string, TPackedRow>; // sectionId -> layout
 // gap minimo (px) tra due barre sulla stessa sotto-riga, per non farle "toccare"
 const MIN_GAP_PX = 4;
 
+// altezza (px) della riga-intestazione di sezione (stile Asana: header su riga propria,
+// leggermente più bassa delle righe-barra). Usata IDENTICA da sidebar e grafico per l'allineamento.
+export const PACKED_HEADER_HEIGHT = 34;
+
 /**
  * Impacchetta le barre di ogni sezione sulle sotto-righe (interval partitioning sui
  * pixel), includendo solo quelle che intersecano la finestra `[windowStart, windowEnd]`
@@ -60,7 +64,8 @@ export const computePackedLayout = (
       subRowByBlockId[s.id] = placed;
     }
     layout[section.id] = {
-      rowCount: Math.max(1, rowEnds.length),
+      // 0 sotto-righe se nessuna barra è in finestra → banda = sola intestazione (stile Asana)
+      rowCount: rowEnds.length,
       subRowByBlockId,
       visibleIds: spans.map((s) => s.id),
     };
