@@ -1,14 +1,15 @@
 /**
- * Minardi fork (SPIKE drag): barra trascinabile per la timeline a corsie impacchettate.
+ * Minardi fork: barra trascinabile per la timeline a corsie impacchettate.
  *
  * Rispecchia GanttChartBlock (blocks/block.tsx) ma è posizionata in ASSOLUTO dentro la
  * banda: top = sotto-riga (dal packing), marginLeft/width = posizione data (dal chart
  * store). Riusa useGanttResizable + ChartDraggable → il drag orizzontale sposta/ridimensiona
  * le date e salva via updateBlockDates, esattamente come nella Gantt standard di Plane.
  *
- * Nota: durante il drag il packing è congelato a monte (isDragging) → la barra resta nella
- * sua corsia e l'altezza banda non cambia; il feedback visivo avviene per mutazione diretta
- * dello stile (marginLeft/width) fatta da useGanttResizable.
+ * Durante il drag il packing è congelato a monte (isDragging in main-content) → la barra
+ * resta nella sua corsia e l'altezza banda non cambia; il feedback visivo avviene per
+ * mutazione diretta dello stile (marginLeft/width) fatta da useGanttResizable. Al rilascio
+ * il packing si ricalcola sulle nuove date (la barra può cambiare sotto-riga, corretto).
  */
 import type { RefObject } from "react";
 import { useRef } from "react";

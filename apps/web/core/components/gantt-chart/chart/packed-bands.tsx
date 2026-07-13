@@ -2,7 +2,7 @@
  * Minardi fork: rendering "a corsie impacchettate" (stile Asana) del grafico Gantt.
  * Per ogni sezione una banda; i task sono barre posizionate in assoluto:
  * left = posizione data (dal chart store), top = sotto-riga (dal packing), width = durata.
- * SPIKE drag: le barre sono PackedGanttBar (trascinabili) se il drag è abilitato.
+ * Le barre sono PackedGanttBar (trascinabili: move + resize) quando il drag è abilitato.
  */
 import type { RefObject } from "react";
 import { observer } from "mobx-react";
