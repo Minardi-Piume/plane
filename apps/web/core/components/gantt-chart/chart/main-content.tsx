@@ -100,8 +100,10 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   // in pixel chart-local la porzione visibile
   const chartContentRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
+  // Minardi fork: layout congelato durante il drag (evita repacking a metà trascinamento)
+  const lastLayoutRef = useRef<ReturnType<typeof computePackedLayout>>(EMPTY_PACKED_LAYOUT);
   // chart hook
-  const { currentView, currentViewData, getBlockById } = useTimeLineChartStore();
+  const { currentView, currentViewData, getBlockById, isDragging } = useTimeLineChartStore();
   // Minardi fork: modalità corsie impacchettate (stile Asana)
   const { packed, sections } = useGanttGroups();
 
@@ -147,8 +149,19 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
   // Minardi fork: packing "per finestra visibile". Calcolato nel render (questo è un
   // observer): computePackedLayout legge le position via getBlockById, quindi MobX
   // traccia i cambi di posizione (zoom/scroll/caricamento) e ricalcola le bande.
+  // Durante il drag (isDragging) NON ricalcoliamo: si riusa l'ultimo layout così la barra
+  // trascinata resta nella sua corsia e l'altezza banda non salta; il feedback visivo è
+  // gestito da useGanttResizable mutando direttamente lo stile della barra.
   const win = packWindow ?? { start: 0, end: itemsContainerWidth };
-  const packedLayout = packed ? computePackedLayout(sections, getBlockById, win.start, win.end) : EMPTY_PACKED_LAYOUT;
+  let packedLayout = EMPTY_PACKED_LAYOUT;
+  if (packed) {
+    if (isDragging) {
+      packedLayout = lastLayoutRef.current;
+    } else {
+      packedLayout = computePackedLayout(sections, getBlockById, win.start, win.end);
+      lastLayoutRef.current = packedLayout;
+    }
+  }
   // plane web hooks
   const isBulkOperationsEnabled = useBulkOperationStatus();
 
@@ -270,7 +283,15 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
                     }}
                   >
                     {packed ? (
-                      <GanttPackedBands blockToRender={blockToRender} itemsContainerWidth={itemsContainerWidth} />
+                      <GanttPackedBands
+                        blockToRender={blockToRender}
+                        itemsContainerWidth={itemsContainerWidth}
+                        ganttContainerRef={ganttContainerRef}
+                        updateBlockDates={updateBlockDates}
+                        enableBlockLeftResize={enableBlockLeftResize}
+                        enableBlockRightResize={enableBlockRightResize}
+                        enableBlockMove={enableBlockMove}
+                      />
                     ) : (
                       <>
                         <GanttChartRowList
