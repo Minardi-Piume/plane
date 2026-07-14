@@ -32,10 +32,13 @@ import type { GanttStoreType } from "./base-gantt-root";
 type Props = {
   issueId: string;
   isEpic?: boolean;
+  // Minardi fork: in modalità corsie il nome va ACCANTO alla barra (fuori), stile Asana,
+  // così è leggibile anche sulle barre corte (1-2 giorni).
+  labelOutside?: boolean;
 };
 
 export const IssueGanttBlock = observer(function IssueGanttBlock(props: Props) {
-  const { issueId, isEpic } = props;
+  const { issueId, isEpic, labelOutside = false } = props;
   // router
   const { workspaceSlug: routerWorkspaceSlug } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
@@ -64,6 +67,7 @@ export const IssueGanttBlock = observer(function IssueGanttBlock(props: Props) {
       <Popover.Button
         className="w-full"
         render={
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
           <div
             id={`issue-${issueId}`}
             className="space-between relative flex h-full w-full cursor-pointer items-center rounded-sm"
@@ -71,12 +75,21 @@ export const IssueGanttBlock = observer(function IssueGanttBlock(props: Props) {
             onClick={handleIssuePeekOverview}
           >
             <div className="absolute top-0 left-0 h-full w-full bg-surface-1/50" />
-            <div
-              className="sticky w-auto flex-1 truncate overflow-hidden px-2.5 py-1 text-13 text-primary"
-              style={{ left: `${SIDEBAR_WIDTH}px` }}
-            >
-              {issueDetails?.name}
-            </div>
+            {labelOutside ? (
+              // Minardi fork (corsie stile Asana): nome ACCANTO alla barra, fuori, non troncato dalla barra
+              <div className="pointer-events-none absolute top-0 left-full flex h-full items-center pl-1.5 text-13 whitespace-nowrap text-primary">
+                <span className="truncate" style={{ maxWidth: "280px" }}>
+                  {issueDetails?.name}
+                </span>
+              </div>
+            ) : (
+              <div
+                className="sticky w-auto flex-1 truncate overflow-hidden px-2.5 py-1 text-13 text-primary"
+                style={{ left: `${SIDEBAR_WIDTH}px` }}
+              >
+                {issueDetails?.name}
+              </div>
+            )}
             {isEpic && (
               <IssueStats
                 issueId={issueId}
