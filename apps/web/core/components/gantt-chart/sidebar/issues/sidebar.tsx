@@ -111,6 +111,13 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
             </div>
           );
         })}
+        {/* Minardi fork: trigger di paginazione anche in modalità packed (altrimenti il
+            caricamento si ferma e le sezioni i cui task non sono ancora caricati appaiono vuote) */}
+        {canLoadMoreBlocks && (
+          <div ref={setIntersectionElement} className="p-2">
+            <div className="flex h-10 w-full animate-pulse items-center justify-between gap-1.5 rounded-sm bg-layer-1 px-4 py-1.5 md:h-8 md:px-1" />
+          </div>
+        )}
       </div>
     );
   }

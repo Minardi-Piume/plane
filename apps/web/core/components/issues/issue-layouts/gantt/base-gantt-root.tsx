@@ -70,7 +70,7 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
   targetDate.setDate(targetDate.getDate() + 1);
 
   useEffect(() => {
-    fetchIssues("init-loader", { canGroup: false, perPageCount: 100 }, viewId);
+    fetchIssues("init-loader", { canGroup: false, perPageCount: 500 }, viewId);
   }, [fetchIssues, storeType, viewId]);
 
   useEffect(() => {
