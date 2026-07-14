@@ -104,7 +104,7 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
     issue: { getIssueById },
   } = useIssueDetail();
   const { getLabelById } = useLabel();
-  const { getStateById } = useProjectState();
+  const { getStateById, getProjectStates } = useProjectState();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
   const toggleGroup = useCallback((groupId: string) => {
     setCollapsedGroups((prev) => {
@@ -148,6 +148,16 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
     }
     if (order.length <= 1) return { packedSections: [] as TPackedSection[], groupingEnabled: false };
 
+    // Ordina le corsie come nella bacheca Asana: la migrazione ha creato uno STATO per
+    // sezione nell'ordine del board, quindi la `sequence` dello stato omonimo riflette
+    // quell'ordine. Ordiniamo per quella (sezioni senza stato corrispondente → in fondo).
+    const stateSeqByName: Record<string, number> = {};
+    for (const st of getProjectStates(projectId?.toString()) ?? []) {
+      if (st?.name != null) stateSeqByName[st.name] = st.sequence ?? Number.POSITIVE_INFINITY;
+    }
+    const seqOf = (key: string) => stateSeqByName[byGroup[key].name] ?? Number.POSITIVE_INFINITY;
+    order.sort((a, b) => seqOf(a) - seqOf(b));
+
     // Packing per sezione: interval partitioning sulle date (start/target).
     const sections: TPackedSection[] = order.map((key) => {
       const g = byGroup[key];
@@ -184,7 +194,7 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
       };
     });
     return { packedSections: sections, groupingEnabled: true };
-  }, [issuesIds, groupBy, collapsedGroups, getIssueById, getLabelById, getStateById]);
+  }, [issuesIds, groupBy, collapsedGroups, getIssueById, getLabelById, getStateById, getProjectStates, projectId]);
 
   const groupContextValue = useMemo(
     () => ({
