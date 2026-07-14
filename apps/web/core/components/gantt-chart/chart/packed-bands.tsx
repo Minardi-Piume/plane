@@ -44,9 +44,13 @@ export const GanttPackedBands = observer(function GanttPackedBands(props: Props)
     <div className="absolute top-0 left-0 w-max min-w-full">
       {sections.map((section) => {
         const rows = packedLayout[section.id];
-        const rowCount = rows?.rowCount ?? section.rowCount;
-        const subRowOf = rows?.subRowByBlockId ?? section.subRowByBlockId;
-        // virtualizzazione: renderizza solo le barre in vista (visibleIds), non tutti i blockIds
+        // Altezza banda e sotto-righe dal packing GLOBALE (stile Asana): la banda è alta
+        // quanto serve per TUTTI i task della sezione e resta fissa scorrendo — così una
+        // sezione espansa non appare mai vuota anche se i suoi task non sono vicini a "oggi".
+        const rowCount = section.rowCount;
+        const subRowOf = section.subRowByBlockId;
+        // virtualizzazione: renderizza solo le barre nella finestra visibile (visibleIds),
+        // posizionandole alla loro sotto-riga globale; le altre compaiono scorrendo.
         const idsToRender = rows?.visibleIds ?? section.blockIds;
         const bandHeight = PACKED_HEADER_HEIGHT + (section.isCollapsed ? 0 : rowCount * BLOCK_HEIGHT);
         return (

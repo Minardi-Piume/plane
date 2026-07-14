@@ -17,7 +17,7 @@ import { cn } from "@plane/utils";
 import RenderIfVisible from "@/components/core/render-if-visible-HOC";
 import { BLOCK_HEIGHT } from "@/components/gantt-chart/constants";
 // Minardi fork: corsie raggruppate
-import { PACKED_HEADER_HEIGHT, usePackedLayout } from "@/components/gantt-chart/chart/packed-layout";
+import { PACKED_HEADER_HEIGHT } from "@/components/gantt-chart/chart/packed-layout";
 import { isGroupHeaderId, useGanttGroups } from "@/components/gantt-chart/contexts/group-context";
 import { GanttLayoutListItemLoader } from "@/components/ui/loader/layouts/gantt-layout-loader";
 //hooks
@@ -60,8 +60,6 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
   const { getBlockById } = useTimeLineChart(GANTT_TIMELINE_TYPE.ISSUE);
   // Minardi fork: corsie (packed = stile Asana; sennò intestazioni legacy)
   const { packed, sections, headers: groupHeaders, toggleGroup } = useGanttGroups();
-  // Minardi fork: altezza banda dal layout per-finestra (allineata al grafico)
-  const packedLayout = usePackedLayout();
 
   const {
     issues: { getIssueLoader },
@@ -92,7 +90,8 @@ export const IssueGanttSidebar = observer(function IssueGanttSidebar(props: Prop
     return (
       <div>
         {sections.map((section) => {
-          const rowCount = packedLayout[section.id]?.rowCount ?? section.rowCount;
+          // altezza banda dal packing GLOBALE (stile Asana), allineata al grafico
+          const rowCount = section.rowCount;
           const bandHeight = PACKED_HEADER_HEIGHT + (section.isCollapsed ? 0 : rowCount * BLOCK_HEIGHT);
           return (
             <div key={section.id} style={{ height: `${bandHeight}px` }}>
