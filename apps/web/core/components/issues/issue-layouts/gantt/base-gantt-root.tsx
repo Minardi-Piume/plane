@@ -127,9 +127,11 @@ export const BaseGanttRoot = observer(function BaseGanttRoot(props: IBaseGanttRo
         const st = issue.state_id ? getStateById(issue.state_id) : undefined;
         return { key: issue.state_id ?? "__none__", name: st?.name ?? "Senza stato" };
       }
+      // Raggruppa SOLO per etichetta di sezione (prefisso "sez:"). Niente fallback su una
+      // label qualsiasi: i task con un tag ma senza sezione (es. tag "PCK COMPLETED") NON
+      // devono creare sezioni-fantasma → finiscono in "Senza sezione", come in Asana.
       const labelIds = issue.label_ids ?? [];
-      let chosen = labelIds.map((id) => getLabelById(id)).find((l) => l?.name?.startsWith("sez:"));
-      if (!chosen && labelIds.length > 0) chosen = getLabelById(labelIds[0]) ?? undefined;
+      const chosen = labelIds.map((id) => getLabelById(id)).find((l) => l?.name?.startsWith("sez:"));
       const name = (chosen?.name ?? "Senza sezione").replace(/^sez:/, "");
       return { key: chosen?.id ?? "__none__", name };
     };
