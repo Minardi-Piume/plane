@@ -35,15 +35,13 @@ export const getNumberOfDaysInMonth = (month: number, year: number) => {
  * @returns
  */
 export const getWeekNumberByDate = (date: Date) => {
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const daysOffset = firstDayOfYear.getDay();
-
-  const firstWeekStart = firstDayOfYear.getTime() - daysOffset * 24 * 60 * 60 * 1000;
-  const weekStart = new Date(firstWeekStart);
-
-  const weekNumber = Math.floor((date.getTime() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
-
-  return weekNumber;
+  // Minardi fork: numerazione ISO 8601 (settimane lun→dom; la settimana 1 è quella che
+  // contiene il primo giovedì dell'anno) — è la numerazione mostrata da Asana (S11, S12…).
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 };
 
 /**
@@ -74,8 +72,6 @@ export const getDateFromPositionOnGantt = (position: number, chartData: ChartDat
   const numberOfDaysSinceStart = Math.round(position / chartData.data.dayWidth) + offsetDays;
 
   const newDate = addDaysToDate(chartData.data.startDate, numberOfDaysSinceStart);
-
-  if (!newDate) undefined;
 
   return newDate;
 };

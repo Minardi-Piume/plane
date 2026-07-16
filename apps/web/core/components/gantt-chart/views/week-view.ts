@@ -145,6 +145,7 @@ export const getWeeksBetweenTwoDates = (
   const diff = (day + 7 - startOfWeek) % 7; // Calculate days to subtract to get to startOfWeek
   currentDate.setDate(currentDate.getDate() - diff);
 
+  // eslint-disable-next-line no-unmodified-loop-condition -- currentDate is mutated via setDate below
   while (currentDate <= endDate) {
     const weekStartDate = new Date(currentDate.getTime());
     const weekEndDate = new Date(currentDate.getTime() + 6 * 24 * 60 * 60 * 1000);
@@ -160,8 +161,9 @@ export const getWeeksBetweenTwoDates = (
       children: shouldPopulateDaysForWeek ? populateDaysForWeek(weekStartDate, startOfWeek) : undefined,
       weekNumber,
       weekData: {
-        shortTitle: `w${weekNumber}`,
-        title: `Week ${weekNumber}`,
+        // Minardi fork: "S" di settimana, come i numeri settimana della Cronologia Asana
+        shortTitle: `S${weekNumber}`,
+        title: `Settimana ${weekNumber}`,
       },
       title:
         monthAtStartOfTheWeek === monthAtEndOfTheWeek
@@ -173,7 +175,7 @@ export const getWeeksBetweenTwoDates = (
       endYear: yearAtEndOfTheWeek,
       startDate: weekStartDate,
       endDate: weekEndDate,
-      today: today >= weekStartDate && today <= weekEndDate ? true : false,
+      today: today >= weekStartDate && today <= weekEndDate,
     });
 
     currentDate.setDate(currentDate.getDate() + 7);

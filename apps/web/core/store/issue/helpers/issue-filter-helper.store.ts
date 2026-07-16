@@ -68,8 +68,6 @@ export interface IIssueFilterHelperStore {
 }
 
 export class IssueFilterHelperStore implements IIssueFilterHelperStore {
-  constructor() {}
-
   /**
    * @description This method is used to apply the display filters on the issues
    * @param {IIssueFilters} filters
@@ -119,8 +117,13 @@ export class IssueFilterHelperStore implements IIssueFilterHelperStore {
 
     if (displayFilters?.layout) issueFiltersParams.layout = displayFilters?.layout;
 
-    if (ENABLE_ISSUE_DEPENDENCIES && displayFilters?.layout === EIssueLayoutTypes.GANTT)
-      issueFiltersParams["expand"] = "issue_relation,issue_related";
+    if (displayFilters?.layout === EIssueLayoutTypes.GANTT) {
+      // Minardi fork: sulla Gantt il raggruppamento a corsie è client-side; senza group_by
+      // nella query la risposta è piatta (ALL_ISSUES) e può passare da issues-detail,
+      // l'endpoint che include le relazioni richieste dall'expand qui sotto.
+      delete issueFiltersParams.group_by;
+      if (ENABLE_ISSUE_DEPENDENCIES) issueFiltersParams["expand"] = "issue_relation,issue_related";
+    }
 
     return issueFiltersParams;
   };

@@ -360,7 +360,9 @@ export const filterActivityOnSelectedFilters = (
     return filters.includes(item.activity_type as TActivityFilters);
   });
 
-export const ENABLE_ISSUE_DEPENDENCIES = false;
+// Minardi fork: true → le liste issue della Gantt chiedono expand=issue_relation,issue_related
+// (endpoint issues-detail) e lo store popola relationMap in bulk → frecce di dipendenza.
+export const ENABLE_ISSUE_DEPENDENCIES = true;
 
 export const BASE_ACTIVITY_FILTER_TYPES = [
   EActivityFilterType.ACTIVITY,

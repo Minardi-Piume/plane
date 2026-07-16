@@ -96,11 +96,28 @@ export const MonthChartView = observer(function MonthChartView(_props: any) {
             {weeks?.map((weekBlock) => (
               <div
                 key={`column-${weekBlock.startDate.toString()}-${weekBlock.endDate.toString()}`}
-                className={cn("h-full overflow-hidden outline-[0.25px] outline-subtle", {
+                className={cn("relative h-full overflow-hidden outline-[0.25px] outline-subtle", {
                   "bg-accent-primary/20": weekBlock.today,
                 })}
                 style={{ width: `${currentViewData?.data.dayWidth * 7}px` }}
-              />
+              >
+                {/* Minardi fork: sabato/domenica ombreggiati anche nella vista Month (stile Asana) */}
+                {Array.from({ length: 7 }, (_, dayOffset) => {
+                  const dow = (weekBlock.startDate.getDay() + dayOffset) % 7;
+                  if (dow !== 0 && dow !== 6) return null;
+                  return (
+                    <div
+                      key={dayOffset}
+                      className="absolute top-0 h-full"
+                      style={{
+                        left: `${dayOffset * (currentViewData?.data.dayWidth ?? 0)}px`,
+                        width: `${currentViewData?.data.dayWidth}px`,
+                        background: "rgba(128, 128, 128, 0.12)",
+                      }}
+                    />
+                  );
+                })}
+              </div>
             ))}
           </div>
         </div>

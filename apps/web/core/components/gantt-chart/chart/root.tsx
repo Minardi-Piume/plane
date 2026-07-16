@@ -10,11 +10,11 @@ import { createPortal } from "react-dom";
 // plane imports
 // components
 import type { ChartDataType, IBlockUpdateData, IBlockUpdateDependencyData, TGanttViews } from "@plane/types";
+import { EStartOfTheWeek } from "@plane/types";
 import { cn } from "@plane/utils";
 import { GanttChartHeader, GanttChartMainContent } from "@/components/gantt-chart";
 // helpers
 // hooks
-import { useUserProfile } from "@/hooks/store/user";
 import { useTimeLineChartStore } from "@/hooks/use-timeline-chart";
 //
 import { SIDEBAR_WIDTH } from "../constants";
@@ -91,8 +91,9 @@ export const ChartViewRoot = observer(function ChartViewRoot(props: ChartViewRoo
     updateRenderView,
     updateAllBlocksOnChartChangeWhileDragging,
   } = useTimeLineChartStore();
-  const { data } = useUserProfile();
-  const startOfWeek = data?.start_of_the_week;
+  // Minardi fork: la timeline usa SEMPRE settimane lunedì→domenica (come la Cronologia
+  // di Asana), indipendentemente dalla preferenza profilo (che di default è domenica).
+  const startOfWeek = EStartOfTheWeek.MONDAY;
 
   const updateCurrentViewRenderPayload = (side: null | "left" | "right", view: TGanttViews, targetDate?: Date) => {
     const selectedCurrentView: TGanttViews = view;
@@ -152,6 +153,7 @@ export const ChartViewRoot = observer(function ChartViewRoot(props: ChartViewRoo
     setItemsContainerWidth(width + scrollContainer?.scrollLeft);
   };
 
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- kept as method for readability/parity with upstream
   const updateCurrentLeftScrollPosition = (width: number) => {
     const scrollContainer = document.querySelector("#gantt-container") as HTMLDivElement;
     if (!scrollContainer) return;

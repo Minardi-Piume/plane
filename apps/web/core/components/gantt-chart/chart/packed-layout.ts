@@ -79,3 +79,60 @@ export const EMPTY_PACKED_LAYOUT: TPackedLayout = {};
 export const PackedLayoutContext = createContext<TPackedLayout>(EMPTY_PACKED_LAYOUT);
 
 export const usePackedLayout = (): TPackedLayout => useContext(PackedLayoutContext);
+
+// ─── Etichette stile Asana ───────────────────────────────────────────────────
+// Barra "larga" → nome DENTRO (troncato alla barra); barra stretta → nome FUORI a
+// destra, troncato allo spazio libero prima della barra successiva sulla stessa
+// sotto-riga (così i nomi non si sovrappongono mai alle barre vicine).
+
+// sotto questa larghezza (px) della barra il nome va fuori, accanto alla barra
+export const PACKED_LABEL_INSIDE_MIN_WIDTH = 80;
+// tetto (px) per l'etichetta esterna (come il maxWidth storico)
+export const PACKED_LABEL_MAX_WIDTH = 280;
+// sotto questo spazio disponibile (px) l'etichetta esterna non viene resa affatto
+export const PACKED_LABEL_MIN_WIDTH = 20;
+
+// blockId -> px liberi a destra della barra (fino alla barra successiva della sotto-riga)
+export type TPackedLabelWidths = Record<string, number>;
+
+type TPackedSectionLike = {
+  id: string;
+  blockIds: string[];
+  subRowByBlockId: Record<string, number>;
+  isCollapsed: boolean;
+};
+
+/**
+ * Spazio libero a destra di ogni barra sulla sua sotto-riga (packing GLOBALE, lo stesso
+ * usato per posizionare le barre). Serve a troncare le etichette esterne stile Asana.
+ */
+export const computePackedLabelWidths = (
+  sections: TPackedSectionLike[],
+  getBlockById: (blockId: string) => IGanttBlock | undefined
+): TPackedLabelWidths => {
+  const out: TPackedLabelWidths = {};
+  for (const section of sections) {
+    if (section.isCollapsed) continue;
+    const byRow = new Map<number, { id: string; left: number; right: number }[]>();
+    for (const id of section.blockIds) {
+      const pos = getBlockById(id)?.position;
+      if (!pos) continue;
+      const row = section.subRowByBlockId[id] ?? 0;
+      const spans = byRow.get(row) ?? [];
+      spans.push({ id, left: pos.marginLeft, right: pos.marginLeft + pos.width });
+      byRow.set(row, spans);
+    }
+    for (const spans of byRow.values()) {
+      spans.sort((a, b) => a.left - b.left);
+      for (let i = 0; i < spans.length; i++) {
+        const next = spans[i + 1];
+        out[spans[i].id] = next ? Math.max(0, next.left - spans[i].right) : Number.POSITIVE_INFINITY;
+      }
+    }
+  }
+  return out;
+};
+
+export const PackedLabelWidthsContext = createContext<TPackedLabelWidths | null>(null);
+
+export const usePackedLabelWidths = (): TPackedLabelWidths | null => useContext(PackedLabelWidthsContext);
